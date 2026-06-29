@@ -64,6 +64,11 @@ class PhoneSceneDelegate: UIResponder, UIWindowSceneDelegate {
       in: window,
       launchOptions: nil
     )
+    // Ciemne tło okna/roota — eliminuje biały błysk między LaunchScreen
+    // a pierwszą klatką React Native (kolor bg0 = #04060B).
+    let dark = UIColor(red: 4.0 / 255, green: 6.0 / 255, blue: 11.0 / 255, alpha: 1)
+    window.backgroundColor = dark
+    window.rootViewController?.view.backgroundColor = dark
     self.window = window
   }
 }
