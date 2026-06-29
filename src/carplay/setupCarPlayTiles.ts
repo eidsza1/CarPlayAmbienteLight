@@ -78,10 +78,8 @@ const POWER_COLOR: Record<string, any> = {
 };
 const BRIGHT_UP = require('../../assets/carplay/tile_bright_up.png');
 const BRIGHT_DOWN = require('../../assets/carplay/tile_bright_down.png');
-const BRIGHT_VAL = require('../../assets/carplay/tile_bright_val.png');
 const SPEED_UP = require('../../assets/carplay/tile_speed_up.png');
 const SPEED_DOWN = require('../../assets/carplay/tile_speed_down.png');
-const SPEED_VAL = require('../../assets/carplay/tile_speed_val.png');
 const clamp = (v: number) => Math.max(10, Math.min(100, v));
 
 const MODES = [
@@ -150,45 +148,55 @@ function listTab(): ListTemplate {
   return listTpl;
 }
 
-// ---- Sterowanie ----
-function controlTab(): GridTemplate {
+// ---- Jasność (power on/off + jasność) ----
+function brightTab(): GridTemplate {
   const s = useAmbiente.getState();
   const on = s.power;
   const preset = presetColors.find(p => sameRGB(s.color, p.rgb as RGB));
   const onImage = preset ? POWER_COLOR[preset.id] : POWER_GREEN;
   return new GridTemplate({
-    title: 'Sterowanie',
-    tabTitle: 'Sterowanie',
-    tabSystemImageName: 'slider.horizontal.3',
+    title: 'Jasność',
+    tabTitle: 'Jasność',
+    tabSystemImageName: 'sun.max.fill',
     buttons: [
-      // Rząd 1: Jasność −/%/+
-      { id: 'bright_down', titleVariants: ['Jasność −'], image: BRIGHT_DOWN },
-      { id: 'bright_val', titleVariants: [`Jasność ${s.brightness}%`], image: BRIGHT_VAL },
-      { id: 'bright_up', titleVariants: ['Jasność +'], image: BRIGHT_UP },
-      // Rząd 2: Prędkość −/%/+
-      { id: 'speed_down', titleVariants: ['Prędkość −'], image: SPEED_DOWN },
-      { id: 'speed_val', titleVariants: [`Prędkość ${s.speed}%`], image: SPEED_VAL },
-      { id: 'speed_up', titleVariants: ['Prędkość +'], image: SPEED_UP },
-      // Rząd 3: Power
       {
         id: 'power',
         titleVariants: [on ? 'Włączone' : 'Wyłączone'],
         image: on ? onImage : POWER_GRAY,
       },
+      { id: 'bright_down', titleVariants: [`Jasność ${s.brightness}%`], image: BRIGHT_DOWN },
+      { id: 'bright_up', titleVariants: [`Jasność ${s.brightness}%`], image: BRIGHT_UP },
     ],
     onButtonPressed: ({ id }) => {
       const st = useAmbiente.getState();
       if (id === 'power') st.togglePower();
       else if (id === 'bright_down') st.setBrightness(clamp(st.brightness - 10));
       else if (id === 'bright_up') st.setBrightness(clamp(st.brightness + 10));
-      else if (id === 'speed_down') st.setSpeed(clamp(st.speed - 10));
+    },
+  });
+}
+
+// ---- Prędkość (tylko prędkość) ----
+function speedTab(): GridTemplate {
+  const s = useAmbiente.getState();
+  return new GridTemplate({
+    title: 'Prędkość',
+    tabTitle: 'Prędkość',
+    tabSystemImageName: 'speedometer',
+    buttons: [
+      { id: 'speed_down', titleVariants: [`Prędkość ${s.speed}%`], image: SPEED_DOWN },
+      { id: 'speed_up', titleVariants: [`Prędkość ${s.speed}%`], image: SPEED_UP },
+    ],
+    onButtonPressed: ({ id }) => {
+      const st = useAmbiente.getState();
+      if (id === 'speed_down') st.setSpeed(clamp(st.speed - 10));
       else if (id === 'speed_up') st.setSpeed(clamp(st.speed + 10));
     },
   });
 }
 
 let tabBarTpl: TabBarTemplate | null = null;
-const buildTabs = () => [listTab(), gridTab(), controlTab()];
+const buildTabs = () => [listTab(), gridTab(), brightTab(), speedTab()];
 
 export function setupCarPlayTiles() {
   try {
