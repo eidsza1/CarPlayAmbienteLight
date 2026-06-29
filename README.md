@@ -1,6 +1,6 @@
 # Alfa Romeo Ambiente Light (CarPlay)
 
-Aplikacja **React Native** sterująca taśmami LED **LEDCAR** w Alfa Romeo przez **Bluetooth LE**, z integracją **Apple CarPlay**. Przepisana z oryginalnej aplikacji .NET MAUI na lżejszy stos React Native.
+Aplikacja **React Native** sterująca taśmami LED **LEDCAR** w Alfa Romeo przez **Bluetooth LE**, z integracją **Apple CarPlay**. Protokół sterownika odtworzony przez analizę pakietów BLE; własny, lekki interfejs na telefon i ekran auta.
 
 ## Funkcje
 
