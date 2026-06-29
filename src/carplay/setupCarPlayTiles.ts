@@ -23,6 +23,15 @@ const TILE: Record<string, any> = {
   blue: require('../../assets/carplay/tile_blue.png'),
   pink: require('../../assets/carplay/tile_pink.png'),
 };
+// Zaznaczone: ta sama grafika z nałożonym ✓ (bez ramki).
+const TILE_ON: Record<string, any> = {
+  red: require('../../assets/carplay/tile_red_on.png'),
+  orange: require('../../assets/carplay/tile_orange_on.png'),
+  yellow: require('../../assets/carplay/tile_yellow_on.png'),
+  green: require('../../assets/carplay/tile_green_on.png'),
+  blue: require('../../assets/carplay/tile_blue_on.png'),
+  pink: require('../../assets/carplay/tile_pink_on.png'),
+};
 // Kafle Siatki — checkbox wyśrodkowany na tle wnętrza (off/on).
 const GRID_OFF: Record<string, any> = {
   red: require('../../assets/carplay/grid_red.png'),
@@ -45,26 +54,11 @@ const MODE_IMG: Record<string, any> = {
   seven: require('../../assets/carplay/tile_seven.png'),
   breathe: require('../../assets/carplay/tile_breathe.png'),
 };
+const MODE_ON: Record<string, any> = {
+  seven: require('../../assets/carplay/tile_seven_on.png'),
+  breathe: require('../../assets/carplay/tile_breathe_on.png'),
+};
 
-// Checkboxy jak w aplikacji telefonu: obrys w kolorze (off), wypełniony + ✓ (on).
-const CB_OFF: Record<string, any> = {
-  red: require('../../assets/carplay/cb_red_off.png'),
-  orange: require('../../assets/carplay/cb_orange_off.png'),
-  yellow: require('../../assets/carplay/cb_yellow_off.png'),
-  green: require('../../assets/carplay/cb_green_off.png'),
-  blue: require('../../assets/carplay/cb_blue_off.png'),
-  pink: require('../../assets/carplay/cb_pink_off.png'),
-};
-const CB_ON: Record<string, any> = {
-  red: require('../../assets/carplay/cb_red_on.png'),
-  orange: require('../../assets/carplay/cb_orange_on.png'),
-  yellow: require('../../assets/carplay/cb_yellow_on.png'),
-  green: require('../../assets/carplay/cb_green_on.png'),
-  blue: require('../../assets/carplay/cb_blue_on.png'),
-  pink: require('../../assets/carplay/cb_pink_on.png'),
-};
-const CB_MODE_OFF = require('../../assets/carplay/cb_mode_off.png');
-const CB_MODE_ON = require('../../assets/carplay/cb_mode_on.png');
 const POWER_GREEN = require('../../assets/carplay/tile_power_green.png');
 const POWER_GRAY = require('../../assets/carplay/tile_power_gray.png');
 // Power w kolorze wybranego presetu (gdy włączone).
@@ -80,7 +74,21 @@ const BRIGHT_UP = require('../../assets/carplay/tile_bright_up.png');
 const BRIGHT_DOWN = require('../../assets/carplay/tile_bright_down.png');
 const SPEED_UP = require('../../assets/carplay/tile_speed_up.png');
 const SPEED_DOWN = require('../../assets/carplay/tile_speed_down.png');
+// Obrotomierze poziomu prędkości (wskazówka odzwierciedla wartość, co 10%).
+const SPEED_GAUGE: Record<number, any> = {
+  10: require('../../assets/carplay/speed_g10.png'),
+  20: require('../../assets/carplay/speed_g20.png'),
+  30: require('../../assets/carplay/speed_g30.png'),
+  40: require('../../assets/carplay/speed_g40.png'),
+  50: require('../../assets/carplay/speed_g50.png'),
+  60: require('../../assets/carplay/speed_g60.png'),
+  70: require('../../assets/carplay/speed_g70.png'),
+  80: require('../../assets/carplay/speed_g80.png'),
+  90: require('../../assets/carplay/speed_g90.png'),
+  100: require('../../assets/carplay/speed_g100.png'),
+};
 const clamp = (v: number) => Math.max(10, Math.min(100, v));
+const nearest10 = (v: number) => Math.min(100, Math.max(10, Math.round(v / 10) * 10));
 
 const MODES = [
   { id: 'seven', label: '7 kolorów', detail: 'Płynna zmiana 7 barw w pętli' },
@@ -125,15 +133,14 @@ function listSections() {
     id: p.id,
     text: p.label,
     detailText: `Zmienia kolor taśmy na ${p.label.toLowerCase()}`,
-    image: TILE[p.id],
-    accessoryImage: colorSelected(p.id) ? CB_ON[p.id] : CB_OFF[p.id],
+    // Grafika swatcha; zaznaczony = ta sama grafika z nałożonym ✓ (bez ramki).
+    image: colorSelected(p.id) ? TILE_ON[p.id] : TILE[p.id],
   }));
   const modeItems = MODES.map(m => ({
     id: m.id,
     text: m.label,
     detailText: m.detail,
-    image: MODE_IMG[m.id],
-    accessoryImage: s.mode === m.id ? CB_MODE_ON : CB_MODE_OFF,
+    image: s.mode === m.id ? MODE_ON[m.id] : MODE_IMG[m.id],
   }));
   return [{ header: 'Kolor', items: [...colorItems, ...modeItems] }];
 }
@@ -159,18 +166,23 @@ function brightTab(): GridTemplate {
     tabTitle: 'Jasność',
     tabSystemImageName: 'sun.max.fill',
     buttons: [
+      // Lewy: ciemniej
+      { id: 'bright_down', titleVariants: ['Ciemniej'], image: BRIGHT_DOWN },
+      // Środek: power — gdy włączony pokazuje jasność %, gdy wyłączony „Wyłączone"
       {
         id: 'power',
-        titleVariants: [on ? 'Włączone' : 'Wyłączone'],
+        titleVariants: [on ? `Jasność ${s.brightness}%` : 'Wyłączone'],
         image: on ? onImage : POWER_GRAY,
       },
-      { id: 'bright_down', titleVariants: [`Jasność ${s.brightness}%`], image: BRIGHT_DOWN },
-      { id: 'bright_up', titleVariants: [`Jasność ${s.brightness}%`], image: BRIGHT_UP },
+      // Prawy: jaśniej
+      { id: 'bright_up', titleVariants: ['Jaśniej'], image: BRIGHT_UP },
     ],
     onButtonPressed: ({ id }) => {
       const st = useAmbiente.getState();
-      if (id === 'power') st.togglePower();
-      else if (id === 'bright_down') st.setBrightness(clamp(st.brightness - 10));
+      if (id === 'power') return void st.togglePower();
+      // Jaśniej/Ciemniej przy wyłączonym świetle — najpierw włącz.
+      if (!st.power) st.togglePower();
+      if (id === 'bright_down') st.setBrightness(clamp(st.brightness - 10));
       else if (id === 'bright_up') st.setBrightness(clamp(st.brightness + 10));
     },
   });
@@ -184,8 +196,16 @@ function speedTab(): GridTemplate {
     tabTitle: 'Prędkość',
     tabSystemImageName: 'speedometer',
     buttons: [
-      { id: 'speed_down', titleVariants: [`Prędkość ${s.speed}%`], image: SPEED_DOWN },
-      { id: 'speed_up', titleVariants: [`Prędkość ${s.speed}%`], image: SPEED_UP },
+      // Lewy: wolniej
+      { id: 'speed_down', titleVariants: ['Wolniej'], image: SPEED_DOWN },
+      // Środek: obrotomierz z aktualną wartością (napis pod spodem)
+      {
+        id: 'speed_val',
+        titleVariants: [`Prędkość ${s.speed}%`],
+        image: SPEED_GAUGE[nearest10(s.speed)],
+      },
+      // Prawy: szybciej
+      { id: 'speed_up', titleVariants: ['Szybciej'], image: SPEED_UP },
     ],
     onButtonPressed: ({ id }) => {
       const st = useAmbiente.getState();
@@ -214,12 +234,18 @@ export function setupCarPlayTiles() {
       tabBarTpl = null;
     });
 
-    // Żywa aktualizacja po każdej zmianie stanu:
-    // - Lista: w miejscu (bez resetu zakładki),
-    // - Siatka: przez przebudowę zakładek (GridTemplate nie ma update w miejscu).
+    // Żywa aktualizacja po zmianie stanu:
+    // - Lista: w miejscu (updateSections) — zachowuje fokus i przesuwa ✓.
+    // - Siatka/Jasność/Prędkość (GridTemplate): brak update w miejscu, więc
+    //   przebudowujemy zakładki, ale listę podajemy jako TĘ SAMĄ (już
+    //   zaktualizowaną) instancję, żeby nie resetować jej fokusu.
     useAmbiente.subscribe(() => {
-      listTpl?.updateSections(listSections());
-      tabBarTpl?.updateTemplates({ templates: buildTabs(), onTemplateSelect: () => {} });
+      if (!tabBarTpl || !listTpl) return;
+      listTpl.updateSections(listSections());
+      tabBarTpl.updateTemplates({
+        templates: [listTpl, gridTab(), brightTab(), speedTab()],
+        onTemplateSelect: () => {},
+      });
     });
   } catch (e) {
     // eslint-disable-next-line no-console
