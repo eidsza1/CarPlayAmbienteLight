@@ -22,20 +22,9 @@
       android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:supportsRtl="true">
 
-      <!-- Android Auto -->
+      <!-- Android Auto (CarPlayService deklaruje sama biblioteka react-native-carplay) -->
       <meta-data android:name="com.google.android.gms.car.application"
         android:resource="@xml/automotive_app_desc" />
-      <meta-data android:name="androidx.car.app.minCarApiLevel"
-        android:value="1" />
-
-      <service
-        android:name="react-native-carplay.RNCarPlayAppService"
-        android:exported="true">
-        <intent-filter>
-          <action android:name="androidx.car.app.CarAppService" />
-          <category android:name="androidx.car.app.category.IOT" />
-        </intent-filter>
-      </service>
 
       <activity
         android:name=".MainActivity"
