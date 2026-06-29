@@ -78,18 +78,11 @@ const POWER_COLOR: Record<string, any> = {
 };
 const BRIGHT_UP = require('../../assets/carplay/tile_bright_up.png');
 const BRIGHT_DOWN = require('../../assets/carplay/tile_bright_down.png');
-const SPEED: Record<string, any> = {
-  slow: require('../../assets/carplay/speed_slow.png'),
-  med: require('../../assets/carplay/speed_med.png'),
-  fast: require('../../assets/carplay/speed_fast.png'),
-};
-const SPEED_ON: Record<string, any> = {
-  slow: require('../../assets/carplay/speed_slow_on.png'),
-  med: require('../../assets/carplay/speed_med_on.png'),
-  fast: require('../../assets/carplay/speed_fast_on.png'),
-};
-const SPEED_VAL: Record<string, number> = { slow: 20, med: 55, fast: 90 };
-const speedBucket = (v: number) => (v <= 35 ? 'slow' : v <= 70 ? 'med' : 'fast');
+const BRIGHT_VAL = require('../../assets/carplay/tile_bright_val.png');
+const SPEED_UP = require('../../assets/carplay/tile_speed_up.png');
+const SPEED_DOWN = require('../../assets/carplay/tile_speed_down.png');
+const SPEED_VAL = require('../../assets/carplay/tile_speed_val.png');
+const clamp = (v: number) => Math.max(10, Math.min(100, v));
 
 const MODES = [
   { id: 'seven', label: '7 kolorów', detail: 'Płynna zmiana 7 barw w pętli' },
@@ -163,34 +156,33 @@ function controlTab(): GridTemplate {
   const on = s.power;
   const preset = presetColors.find(p => sameRGB(s.color, p.rgb as RGB));
   const onImage = preset ? POWER_COLOR[preset.id] : POWER_GREEN;
-  const bucket = speedBucket(s.speed);
-  const speedBtn = (key: string, label: string) => ({
-    id: `sp_${key}`,
-    titleVariants: [label],
-    image: bucket === key ? SPEED_ON[key] : SPEED[key],
-  });
   return new GridTemplate({
     title: 'Sterowanie',
     tabTitle: 'Sterowanie',
     tabSystemImageName: 'slider.horizontal.3',
     buttons: [
+      // Rząd 1: Jasność −/%/+
+      { id: 'bright_down', titleVariants: ['Jasność −'], image: BRIGHT_DOWN },
+      { id: 'bright_val', titleVariants: [`Jasność ${s.brightness}%`], image: BRIGHT_VAL },
+      { id: 'bright_up', titleVariants: ['Jasność +'], image: BRIGHT_UP },
+      // Rząd 2: Prędkość −/%/+
+      { id: 'speed_down', titleVariants: ['Prędkość −'], image: SPEED_DOWN },
+      { id: 'speed_val', titleVariants: [`Prędkość ${s.speed}%`], image: SPEED_VAL },
+      { id: 'speed_up', titleVariants: ['Prędkość +'], image: SPEED_UP },
+      // Rząd 3: Power
       {
         id: 'power',
         titleVariants: [on ? 'Włączone' : 'Wyłączone'],
         image: on ? onImage : POWER_GRAY,
       },
-      { id: 'bright_up', titleVariants: ['Jasność +'], image: BRIGHT_UP },
-      { id: 'bright_down', titleVariants: ['Jasność −'], image: BRIGHT_DOWN },
-      speedBtn('slow', 'Wolno'),
-      speedBtn('med', 'Średnio'),
-      speedBtn('fast', 'Szybko'),
     ],
     onButtonPressed: ({ id }) => {
-      const s = useAmbiente.getState();
-      if (id === 'power') s.togglePower();
-      else if (id === 'bright_up') s.setBrightness(Math.min(100, s.brightness + 20));
-      else if (id === 'bright_down') s.setBrightness(Math.max(10, s.brightness - 20));
-      else if (id.startsWith('sp_')) s.setSpeed(SPEED_VAL[id.slice(3)]);
+      const st = useAmbiente.getState();
+      if (id === 'power') st.togglePower();
+      else if (id === 'bright_down') st.setBrightness(clamp(st.brightness - 10));
+      else if (id === 'bright_up') st.setBrightness(clamp(st.brightness + 10));
+      else if (id === 'speed_down') st.setSpeed(clamp(st.speed - 10));
+      else if (id === 'speed_up') st.setSpeed(clamp(st.speed + 10));
     },
   });
 }

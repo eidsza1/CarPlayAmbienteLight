@@ -276,7 +276,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "pl.akmf.obdvisualizer";
 				DEVELOPMENT_TEAM = KY97P64SKY;
 				CODE_SIGN_STYLE = Manual;
-				PROVISIONING_PROFILE_SPECIFIER = "CarPlayDevProfile";
+				PROVISIONING_PROFILE_SPECIFIER = "22da8d08-c8d3-49d5-af16-b24b13c53fe6";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_ENTITLEMENTS = AlfaRomeoAmbiente/AlfaRomeoAmbiente.entitlements;
 				SWIFT_OBJC_BRIDGING_HEADER = "AlfaRomeoAmbiente/AlfaRomeoAmbiente-Bridging-Header.h";
@@ -311,7 +311,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "pl.akmf.obdvisualizer";
 				DEVELOPMENT_TEAM = KY97P64SKY;
 				CODE_SIGN_STYLE = Manual;
-				PROVISIONING_PROFILE_SPECIFIER = "CarPlayDevProfile";
+				PROVISIONING_PROFILE_SPECIFIER = "22da8d08-c8d3-49d5-af16-b24b13c53fe6";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_ENTITLEMENTS = AlfaRomeoAmbiente/AlfaRomeoAmbiente.entitlements;
 				SWIFT_OBJC_BRIDGING_HEADER = "AlfaRomeoAmbiente/AlfaRomeoAmbiente-Bridging-Header.h";
