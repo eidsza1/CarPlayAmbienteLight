@@ -1,0 +1,40 @@
+diff --git a/node_modules/react-native-carplay/ios/RNCarPlay.m b/node_modules/react-native-carplay/ios/RNCarPlay.m
+index 153dbad..d4a416f 100644
+--- a/node_modules/react-native-carplay/ios/RNCarPlay.m
++++ b/node_modules/react-native-carplay/ios/RNCarPlay.m
+@@ -1093,7 +1093,8 @@ - (void) applyConfigForMapTemplate:(CPMapTemplate*)mapTemplate templateId:(NSStr
+             CPListItem *_item;
+             if (@available(iOS 14.0, *)) {
+                 CPListItemAccessoryType accessoryType = _showsDisclosureIndicator ? CPListItemAccessoryTypeDisclosureIndicator : CPListItemAccessoryTypeNone;
+-                _item = [[CPListItem alloc] initWithText:_text detailText:_detailText image:_image accessoryImage:nil accessoryType:accessoryType];
++                UIImage *_accessoryImage = item[@"accessoryImage"] ? [RCTConvert UIImage:item[@"accessoryImage"]] : nil;
++                _item = [[CPListItem alloc] initWithText:_text detailText:_detailText image:_image accessoryImage:_accessoryImage accessoryType:accessoryType];
+             } else {
+                 _item = [[CPListItem alloc] initWithText:_text detailText:_detailText image:_image showsDisclosureIndicator:_showsDisclosureIndicator];
+             }
+diff --git a/node_modules/react-native-carplay/lib/templates/Template.js b/node_modules/react-native-carplay/lib/templates/Template.js
+index 5f6a243..c5e070c 100644
+--- a/node_modules/react-native-carplay/lib/templates/Template.js
++++ b/node_modules/react-native-carplay/lib/templates/Template.js
+@@ -4,7 +4,7 @@ exports.Template = void 0;
+ const react_native_1 = require("react-native");
+ const CarPlay_1 = require("../CarPlay");
+ // eslint-disable-next-line @typescript-eslint/no-var-requires
+-const resolveAssetSource = require('react-native/Libraries/Image/resolveAssetSource');
++const _ras = require('react-native/Libraries/Image/resolveAssetSource'); const resolveAssetSource = _ras.default || _ras;
+ class Template {
+     config;
+     get type() {
+diff --git a/node_modules/react-native-carplay/src/templates/Template.ts b/node_modules/react-native-carplay/src/templates/Template.ts
+index d39678f..a7c2c28 100644
+--- a/node_modules/react-native-carplay/src/templates/Template.ts
++++ b/node_modules/react-native-carplay/src/templates/Template.ts
+@@ -3,7 +3,7 @@ import { CarPlay } from '../CarPlay';
+ import { BarButton } from '../interfaces/BarButton';
+ 
+ // eslint-disable-next-line @typescript-eslint/no-var-requires
+-const resolveAssetSource = require('react-native/Libraries/Image/resolveAssetSource');
++const _ras = require('react-native/Libraries/Image/resolveAssetSource'); const resolveAssetSource = _ras.default || _ras;
+ 
+ export interface BaseEvent {
+   /**
