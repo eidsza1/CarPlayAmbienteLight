@@ -234,7 +234,8 @@ const presentUnavailable = () => {
   alertShown = true;
   const alert = new AlertTemplate({
     titleVariants: [
-      'Oświetlenie Ambiente niedostępne',
+      'Oświetlenie Ambiente niedostępne w trybie świateł dziennych',
+      'Ambiente niedostępne (światła dzienne)',
       'Ambiente niedostępne',
     ],
     actions: [
