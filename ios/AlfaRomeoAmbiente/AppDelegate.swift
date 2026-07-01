@@ -28,7 +28,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     reactNativeDelegate = delegate
     reactNativeFactory = factory
 
-    // Okno tworzy delegat sceny (lifecycle scenowy jest wymagany przez CarPlay).
+    // Boot silnika JS OD RAZU przy starcie procesu — niezależnie od tego, która
+    // scena połączy się pierwsza (telefon czy CarPlay). Dzięki temu CarPlay
+    // renderuje się nawet przy ZIMNYM STARCIE z ekranu auta (bez wcześniejszego
+    // otwierania apki na telefonie). Okno bootstrapowe może istnieć bez sceny —
+    // JS i tak startuje (setupCarPlayTiles → szablony CarPlay), a scena telefonu
+    // przejmie to samo okno (patrz PhoneSceneDelegate), by nie tworzyć drugiej
+    // powierzchni RN.
+    let window = UIWindow(frame: UIScreen.main.bounds)
+    let dark = UIColor(red: 4.0 / 255, green: 6.0 / 255, blue: 11.0 / 255, alpha: 1)
+    window.backgroundColor = dark
+    factory.startReactNative(
+      withModuleName: "AlfaRomeoAmbiente",
+      in: window,
+      launchOptions: launchOptions
+    )
+    window.rootViewController?.view.backgroundColor = dark
+    self.window = window
+
     return true
   }
 }
@@ -58,17 +75,30 @@ class PhoneSceneDelegate: UIResponder, UIWindowSceneDelegate {
     options connectionOptions: UIScene.ConnectionOptions
   ) {
     guard let windowScene = scene as? UIWindowScene else { return }
-    let window = UIWindow(windowScene: windowScene)
-    AppDelegate.shared.reactNativeFactory?.startReactNative(
-      withModuleName: "AlfaRomeoAmbiente",
-      in: window,
-      launchOptions: nil
-    )
+
+    // Reużyj okna utworzonego w didFinishLaunching (JS już tam wystartował) —
+    // podpinamy je do sceny telefonu, zamiast tworzyć drugą powierzchnię RN.
+    // Fallback: gdyby z jakiegoś powodu bootstrapu nie było, twórz normalnie.
+    let dark = UIColor(red: 4.0 / 255, green: 6.0 / 255, blue: 11.0 / 255, alpha: 1)
+    let window: UIWindow
+    if let booted = AppDelegate.shared.window {
+      window = booted
+      window.windowScene = windowScene
+    } else {
+      window = UIWindow(windowScene: windowScene)
+      AppDelegate.shared.reactNativeFactory?.startReactNative(
+        withModuleName: "AlfaRomeoAmbiente",
+        in: window,
+        launchOptions: nil
+      )
+      AppDelegate.shared.window = window
+    }
+
     // Ciemne tło okna/roota — eliminuje biały błysk między LaunchScreen
     // a pierwszą klatką React Native (kolor bg0 = #04060B).
-    let dark = UIColor(red: 4.0 / 255, green: 6.0 / 255, blue: 11.0 / 255, alpha: 1)
     window.backgroundColor = dark
     window.rootViewController?.view.backgroundColor = dark
+    window.makeKeyAndVisible()
     self.window = window
   }
 }
