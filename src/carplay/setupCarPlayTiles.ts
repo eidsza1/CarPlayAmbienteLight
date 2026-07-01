@@ -5,6 +5,7 @@
  * Akcje sterują wspólnym store (BLE).
  */
 import {
+  AlertTemplate,
   CarPlay,
   GridTemplate,
   ListTemplate,
@@ -218,32 +219,104 @@ function speedTab(): GridTemplate {
 let tabBarTpl: TabBarTemplate | null = null;
 const buildTabs = () => [listTab(), gridTab(), brightTab(), speedTab()];
 
+// --- Dostępność sterownika (BLE) ---
+// „Dostępne" = status 'connected'. W trakcie ('scanning'/'connecting') czekamy.
+// Reszta ('error'/'bluetoothOff'/'idle') = niedostępne → komunikat.
+const isConnecting = (st: string) => st === 'scanning' || st === 'connecting';
+const tryConnect = () => {
+  const s = useAmbiente.getState();
+  if (s.status !== 'connected' && !isConnecting(s.status)) s.connect();
+};
+
+let alertShown = false;
+const presentUnavailable = () => {
+  if (alertShown) return;
+  alertShown = true;
+  const alert = new AlertTemplate({
+    titleVariants: [
+      'Oświetlenie Ambiente niedostępne',
+      'Ambiente niedostępne',
+    ],
+    actions: [
+      { id: 'refresh', title: 'Odśwież', style: 'default' },
+      { id: 'ok', title: 'OK', style: 'cancel' },
+    ],
+    onActionButtonPressed: ({ id }) => {
+      alertShown = false;
+      CarPlay.dismissTemplate();
+      if (id === 'refresh') tryConnect();
+    },
+  });
+  CarPlay.presentTemplate(alert);
+};
+const dismissUnavailable = () => {
+  if (!alertShown) return;
+  alertShown = false;
+  CarPlay.dismissTemplate();
+};
+// Pokaż/ukryj komunikat wg statusu (bez migania w trakcie łączenia).
+const evalAvailability = () => {
+  const st = useAmbiente.getState().status;
+  if (st === 'connected') dismissUnavailable();
+  else if (!isConnecting(st)) presentUnavailable();
+};
+
+let availTimer: ReturnType<typeof setInterval> | null = null;
+
 export function setupCarPlayTiles() {
   try {
     CarPlay.registerOnConnect(() => {
       const s = useAmbiente.getState();
-      if (s.status === 'idle' || s.status === 'error') s.connect();
+      if (s.status !== 'connected' && !isConnecting(s.status)) s.connect();
       tabBarTpl = new TabBarTemplate({
         templates: buildTabs(),
         onTemplateSelect: () => {},
       });
       CarPlay.setRootTemplate(tabBarTpl);
+
+      // Cykliczne sprawdzanie dostępności co 6 s: gdy niedostępne — ponów skan
+      // i pokaż komunikat; gdy wróci — sam się schowa.
+      if (availTimer) clearInterval(availTimer);
+      availTimer = setInterval(() => {
+        const st = useAmbiente.getState().status;
+        if (st !== 'connected' && !isConnecting(st)) tryConnect();
+        evalAvailability();
+      }, 6000);
     });
     CarPlay.registerOnDisconnect(() => {
+      if (availTimer) {
+        clearInterval(availTimer);
+        availTimer = null;
+      }
+      alertShown = false;
       listTpl = null;
       tabBarTpl = null;
     });
 
-    // Żywa aktualizacja po zmianie stanu:
-    // - Lista: w miejscu (updateSections) — zachowuje fokus i przesuwa ✓.
-    // - Siatka/Jasność/Prędkość (GridTemplate): brak update w miejscu, więc
-    //   przebudowujemy zakładki, ale listę podajemy jako TĘ SAMĄ (już
-    //   zaktualizowaną) instancję, żeby nie resetować jej fokusu.
+    // Żywa aktualizacja po zmianie stanu.
+    //
+    // WAŻNE (realne CarPlay w aucie): odświeżamy zakładki TYLKO gdy zmieni się
+    // wartość widoczna w szablonach (kolor/jasność/prędkość/power/tryb). W aucie
+    // BLE się łączy, więc status zmienia się kilka razy tuż po podłączeniu sceny
+    // — gdybyśmy przebudowywali szablon na każdą zmianę stanu (w tym status),
+    // przebudowa w trakcie startu sceny czyściła ekran (sama tapeta).
+    // Zakładki budujemy na świeżo (recykling instancji listy dawał pusty ekran
+    // na realnym sprzęcie). Kosztem jest reset fokusu listy — poprawność ważniejsza.
+    let prevKey = '';
     useAmbiente.subscribe(() => {
-      if (!tabBarTpl || !listTpl) return;
-      listTpl.updateSections(listSections());
+      // Komunikat dostępności reaguje na każdą zmianę statusu.
+      if (tabBarTpl) evalAvailability();
+
+      if (!tabBarTpl) return;
+      const s = useAmbiente.getState();
+      const key = [
+        s.color[0], s.color[1], s.color[2],
+        s.brightness, s.speed, s.power ? 1 : 0, s.mode,
+      ].join('|');
+      if (key === prevKey) return;
+      prevKey = key;
       tabBarTpl.updateTemplates({
-        templates: [listTpl, gridTab(), brightTab(), speedTab()],
+        templates: buildTabs(),
         onTemplateSelect: () => {},
       });
     });
